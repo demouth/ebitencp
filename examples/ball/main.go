@@ -1,46 +1,3 @@
-# ebiten-chipmunk
-
-**ebiten-chipmunk** is an implementation of the `cp.Drawer` interface from [jakecoffman/cp/v2](https://github.com/jakecoffman/cp). This implementation utilizes [hajimehoshi/ebiten/v2](https://github.com/hajimehoshi/ebiten), making it possible to run across multiple platforms.
-
-![demo](images/demo.gif)
-
-## Usage
-
-Within your `Draw()` method, invoke the `cp.DrawSpace()` function, passing in both a `*cp.Space` and a `*ebitencp.Drawer` as parameters.
-
-```go
-type Game struct {
-	space  *cp.Space
-	drawer *ebitencp.Drawer
-}
-func main() {
-    // ...
-	game := &Game{}
-	game.space = space
-	game.drawer = ebitencp.NewDrawer(screenWidth, screenHeight)
-    // ...
-}
-func (g *Game) Draw(screen *ebiten.Image) {
-	// Drawing with Ebitengine/v2
-	g.drawer.Screen = screen
-	cp.DrawSpace(g.space, g.drawer)
-}
-```
-
-If you want to enable dragging, call the `HandleMouseEvent()` function within the `Update` method, passing the `*cp.Space` object. This will allow objects to be dragged using a mouse or touch device.
-
-```go
-func (g *Game) Update() error {
-	// Handling dragging
-	g.drawer.HandleMouseEvent(g.space)
-	g.space.Step(1 / 60.0)
-	return nil
-}
-```
-
-Below is a simple example that demonstrates the implementation in action.
-
-```go
 package main
 
 import (
@@ -121,6 +78,3 @@ func addBall(space *cp.Space, x, y, radius float64) {
 	shape.SetElasticity(0.5)
 	shape.SetFriction(0.5)
 }
-```
-
-Additional examples can be found in the [examples/)](examples/) directory. These examples can help you adapt the implementation to your own projects.
