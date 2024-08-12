@@ -209,7 +209,6 @@ func (d *Drawer) DrawPolygon(count int, verts []cp.Vector, radius float64, outli
 	}
 
 	d.drawFill(d.Screen, *path, fill.R, fill.G, fill.B, fill.A)
-	d.drawOutline(d.Screen, *path, outline.R, outline.G, outline.B, outline.A)
 }
 func (d *Drawer) DrawDot(size float64, pos cp.Vector, fill cp.FColor, data interface{}) {
 
