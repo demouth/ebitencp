@@ -22,8 +22,7 @@ func main() {
 }
 func (g *Game) Draw(screen *ebiten.Image) {
 	// Drawing with Ebitengine/v2
-	g.drawer.Screen = screen
-	cp.DrawSpace(g.space, g.drawer)
+	cp.DrawSpace(g.space, g.drawer.WithScreen(screen))
 }
 ```
 

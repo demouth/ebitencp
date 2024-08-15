@@ -31,8 +31,7 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	// Drawing with Ebitengine/v2
-	g.drawer.Screen = screen
-	cp.DrawSpace(g.space, g.drawer)
+	cp.DrawSpace(g.space, g.drawer.WithScreen(screen))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {

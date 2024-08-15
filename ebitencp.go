@@ -36,6 +36,11 @@ func NewDrawer(screenWidth, screenHeight int) *Drawer {
 	}
 }
 
+func (d *Drawer) WithScreen(screen *ebiten.Image) *Drawer {
+	d.Screen = screen
+	return d
+}
+
 func (d *Drawer) DrawCircle(pos cp.Vector, angle, radius float64, outline, fill cp.FColor, data interface{}) {
 
 	path := &vector.Path{}

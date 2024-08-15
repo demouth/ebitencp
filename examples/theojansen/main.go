@@ -60,8 +60,7 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.drawer.Screen = screen
-	cp.DrawSpace(g.space, g.drawer)
+	cp.DrawSpace(g.space, g.drawer.WithScreen(screen))
 
 	msg := fmt.Sprintf(
 		"FPS: %0.2f\n"+
