@@ -21,7 +21,13 @@ type Drawer struct {
 	AntiAlias    bool
 	StrokeWidth  float32
 
+	Camera Camera
+
 	handler mouseEventHandler
+}
+
+type Camera struct {
+	Offset cp.Vector
 }
 
 func NewDrawer(screenWidth, screenHeight int) *Drawer {
@@ -33,6 +39,9 @@ func NewDrawer(screenWidth, screenHeight int) *Drawer {
 		ScreenHeight: screenHeight,
 		AntiAlias:    true,
 		StrokeWidth:  1,
+		Camera: Camera{
+			Offset: cp.Vector{X: 0, Y: 0},
+		},
 	}
 }
 
@@ -239,11 +248,11 @@ func (d *Drawer) OutlineColor() cp.FColor {
 func (d *Drawer) ShapeColor(shape *cp.Shape, data interface{}) cp.FColor {
 	body := shape.Body()
 	if body.IsSleeping() {
-		return cp.FColor{R: .2, G: .2, B: .2, A: 1}
+		return cp.FColor{R: .2, G: .2, B: .2, A: 0.5}
 	}
 
 	if body.IdleTime() > shape.Space().SleepTimeThreshold {
-		return cp.FColor{R: .66, G: .66, B: .66, A: 1}
+		return cp.FColor{R: .66, G: .66, B: .66, A: 0.5}
 	}
 	return cp.FColor{R: 0.7, G: 0.3, B: 0.6, A: 0.5}
 }
@@ -270,6 +279,8 @@ func (d *Drawer) drawOutline(
 	sop.LineJoin = vector.LineJoinRound
 	vs, is := path.AppendVerticesAndIndicesForStroke(nil, nil, sop)
 	for i := range vs {
+		vs[i].DstX += float32(d.Camera.Offset.X)
+		vs[i].DstY += float32(d.Camera.Offset.Y)
 		vs[i].SrcX = 1
 		vs[i].SrcY = 1
 		vs[i].ColorR = r
@@ -290,6 +301,8 @@ func (d *Drawer) drawFill(
 ) {
 	vs, is := path.AppendVerticesAndIndicesForFilling(nil, nil)
 	for i := range vs {
+		vs[i].DstX += float32(d.Camera.Offset.X)
+		vs[i].DstY += float32(d.Camera.Offset.Y)
 		vs[i].SrcX = 1
 		vs[i].SrcY = 1
 		vs[i].ColorR = r
