@@ -20,6 +20,7 @@ type Drawer struct {
 	ScreenHeight int
 	AntiAlias    bool
 	StrokeWidth  float32
+	FlipYAxis    bool
 
 	Camera Camera
 
@@ -39,6 +40,7 @@ func NewDrawer(screenWidth, screenHeight int) *Drawer {
 		ScreenHeight: screenHeight,
 		AntiAlias:    true,
 		StrokeWidth:  1,
+		FlipYAxis:    false,
 		Camera: Camera{
 			Offset: cp.Vector{X: 0, Y: 0},
 		},
@@ -51,52 +53,65 @@ func (d *Drawer) WithScreen(screen *ebiten.Image) *Drawer {
 }
 
 func (d *Drawer) DrawCircle(pos cp.Vector, angle, radius float64, outline, fill cp.FColor, data interface{}) {
+	var f float64 = 1
+	if d.FlipYAxis {
+		f = -1
+	}
 
 	path := &vector.Path{}
 	path.Arc(
 		float32(pos.X)+float32(d.ScreenWidth)/2,
-		-float32(pos.Y)+float32(d.ScreenHeight)/2,
+		-float32(pos.Y*f)+float32(d.ScreenHeight)/2,
 		float32(radius),
 		0, 2*math.Pi, vector.Clockwise)
 	d.drawFill(d.Screen, *path, fill.R, fill.G, fill.B, fill.A)
 
 	path.MoveTo(
 		float32(pos.X)+float32(d.ScreenWidth)/2,
-		-float32(pos.Y)+float32(d.ScreenHeight)/2)
+		-float32(pos.Y*f)+float32(d.ScreenHeight)/2)
 	path.LineTo(
 		float32(pos.X+math.Cos(angle)*radius)+float32(d.ScreenWidth)/2,
-		-float32(pos.Y+math.Sin(angle)*radius)+float32(d.ScreenHeight)/2)
+		-float32(pos.Y*f+math.Sin(angle)*radius)+float32(d.ScreenHeight)/2)
 	path.Close()
 
 	d.drawOutline(d.Screen, *path, outline.R, outline.G, outline.B, outline.A)
 }
 
 func (d *Drawer) DrawSegment(a, b cp.Vector, fill cp.FColor, data interface{}) {
+	var f float64 = 1
+	if d.FlipYAxis {
+		f = -1
+	}
 
 	var path *vector.Path = &vector.Path{}
 	path.MoveTo(
 		float32(a.X)+float32(d.ScreenWidth)/2,
-		-float32(a.Y)+float32(d.ScreenHeight)/2)
+		-float32(a.Y*f)+float32(d.ScreenHeight)/2)
 	path.LineTo(
 		float32(b.X)+float32(d.ScreenWidth)/2,
-		-float32(b.Y)+float32(d.ScreenHeight)/2)
+		-float32(b.Y*f)+float32(d.ScreenHeight)/2)
 	path.Close()
 	d.drawFill(d.Screen, *path, fill.R, fill.G, fill.B, fill.A)
 	d.drawOutline(d.Screen, *path, fill.R, fill.G, fill.B, fill.A)
 }
 
 func (d *Drawer) DrawFatSegment(a, b cp.Vector, radius float64, outline, fill cp.FColor, data interface{}) {
+	var f float64 = 1
+	if d.FlipYAxis {
+		f = -1
+	}
+
 	var path vector.Path = vector.Path{}
-	t1 := -float32(math.Atan2(b.Y-a.Y, b.X-a.X)) + math.Pi/2
+	t1 := -float32(math.Atan2(b.Y*f-a.Y*f, b.X-a.X)) + math.Pi/2
 	t2 := t1 + math.Pi
 	path.Arc(
 		float32(a.X)+float32(d.ScreenWidth)/2,
-		-float32(a.Y)+float32(d.ScreenHeight)/2,
+		-float32(a.Y*f)+float32(d.ScreenHeight)/2,
 		float32(radius),
 		t1, t1+math.Pi, vector.Clockwise)
 	path.Arc(
 		float32(b.X)+float32(d.ScreenWidth)/2,
-		-float32(b.Y)+float32(d.ScreenHeight)/2,
+		-float32(b.Y*f)+float32(d.ScreenHeight)/2,
 		float32(radius),
 		t2, t2+math.Pi, vector.Clockwise)
 	path.Close()
@@ -105,6 +120,11 @@ func (d *Drawer) DrawFatSegment(a, b cp.Vector, radius float64, outline, fill cp
 }
 
 func (d *Drawer) DrawPolygon(count int, verts []cp.Vector, radius float64, outline, fill cp.FColor, data interface{}) {
+	var f float64 = 1
+	if d.FlipYAxis {
+		f = -1
+	}
+
 	type ExtrudeVerts struct {
 		offset, n cp.Vector
 	}
@@ -132,16 +152,16 @@ func (d *Drawer) DrawPolygon(count int, verts []cp.Vector, radius float64, outli
 
 		path.MoveTo(
 			float32(v0.X)+float32(d.ScreenWidth)/2,
-			-float32(v0.Y)+float32(d.ScreenHeight)/2)
+			-float32(v0.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(v1.X)+float32(d.ScreenWidth)/2,
-			-float32(v1.Y)+float32(d.ScreenHeight)/2)
+			-float32(v1.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(v2.X)+float32(d.ScreenWidth)/2,
-			-float32(v2.Y)+float32(d.ScreenHeight)/2)
+			-float32(v2.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(v0.X)+float32(d.ScreenWidth)/2,
-			-float32(v0.Y)+float32(d.ScreenHeight)/2)
+			-float32(v0.Y*f)+float32(d.ScreenHeight)/2)
 	}
 
 	outset := 1.0/DrawPointLineScale + radius - inset
@@ -168,55 +188,55 @@ func (d *Drawer) DrawPolygon(count int, verts []cp.Vector, radius float64, outli
 
 		path.MoveTo(
 			float32(inner0.X)+float32(d.ScreenWidth)/2,
-			-float32(inner0.Y)+float32(d.ScreenHeight)/2)
+			-float32(inner0.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(inner1.X)+float32(d.ScreenWidth)/2,
-			-float32(inner1.Y)+float32(d.ScreenHeight)/2)
+			-float32(inner1.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(outer1.X)+float32(d.ScreenWidth)/2,
-			-float32(outer1.Y)+float32(d.ScreenHeight)/2)
+			-float32(outer1.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(inner0.X)+float32(d.ScreenWidth)/2,
-			-float32(inner0.Y)+float32(d.ScreenHeight)/2)
+			-float32(inner0.Y*f)+float32(d.ScreenHeight)/2)
 
 		path.MoveTo(
 			float32(inner0.X)+float32(d.ScreenWidth)/2,
-			-float32(inner0.Y)+float32(d.ScreenHeight)/2)
+			-float32(inner0.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(outer0.X)+float32(d.ScreenWidth)/2,
-			-float32(outer0.Y)+float32(d.ScreenHeight)/2)
+			-float32(outer0.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(outer1.X)+float32(d.ScreenWidth)/2,
-			-float32(outer1.Y)+float32(d.ScreenHeight)/2)
+			-float32(outer1.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(inner0.X)+float32(d.ScreenWidth)/2,
-			-float32(inner0.Y)+float32(d.ScreenHeight)/2)
+			-float32(inner0.Y*f)+float32(d.ScreenHeight)/2)
 
 		path.MoveTo(
 			float32(inner0.X)+float32(d.ScreenWidth)/2,
-			-float32(inner0.Y)+float32(d.ScreenHeight)/2)
+			-float32(inner0.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(outer0.X)+float32(d.ScreenWidth)/2,
-			-float32(outer0.Y)+float32(d.ScreenHeight)/2)
+			-float32(outer0.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(outer2.X)+float32(d.ScreenWidth)/2,
-			-float32(outer2.Y)+float32(d.ScreenHeight)/2)
+			-float32(outer2.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(inner0.X)+float32(d.ScreenWidth)/2,
-			-float32(inner0.Y)+float32(d.ScreenHeight)/2)
+			-float32(inner0.Y*f)+float32(d.ScreenHeight)/2)
 
 		path.MoveTo(
 			float32(inner0.X)+float32(d.ScreenWidth)/2,
-			-float32(inner0.Y)+float32(d.ScreenHeight)/2)
+			-float32(inner0.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(outer2.X)+float32(d.ScreenWidth)/2,
-			-float32(outer2.Y)+float32(d.ScreenHeight)/2)
+			-float32(outer2.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(outer3.X)+float32(d.ScreenWidth)/2,
-			-float32(outer3.Y)+float32(d.ScreenHeight)/2)
+			-float32(outer3.Y*f)+float32(d.ScreenHeight)/2)
 		path.LineTo(
 			float32(inner0.X)+float32(d.ScreenWidth)/2,
-			-float32(inner0.Y)+float32(d.ScreenHeight)/2)
+			-float32(inner0.Y*f)+float32(d.ScreenHeight)/2)
 
 		j = i
 		i++
@@ -225,11 +245,15 @@ func (d *Drawer) DrawPolygon(count int, verts []cp.Vector, radius float64, outli
 	d.drawFill(d.Screen, *path, fill.R, fill.G, fill.B, fill.A)
 }
 func (d *Drawer) DrawDot(size float64, pos cp.Vector, fill cp.FColor, data interface{}) {
+	var f float64 = 1
+	if d.FlipYAxis {
+		f = -1
+	}
 
 	var path *vector.Path = &vector.Path{}
 	path.Arc(
 		float32(pos.X)+float32(d.ScreenWidth)/2,
-		-float32(pos.Y)+float32(d.ScreenHeight)/2,
+		-float32(pos.Y*f)+float32(d.ScreenHeight)/2,
 		float32(2),
 		0, 2*math.Pi, vector.Clockwise)
 	path.Close()
@@ -318,6 +342,7 @@ func (d *Drawer) drawFill(
 
 func (d *Drawer) HandleMouseEvent(space *cp.Space) {
 	d.handler.handleMouseEvent(
+		d,
 		space,
 		d.ScreenWidth,
 		d.ScreenHeight,
@@ -340,7 +365,7 @@ type mouseEventHandler struct {
 	touchIDs   []ebiten.TouchID
 }
 
-func (h *mouseEventHandler) handleMouseEvent(space *cp.Space, screenWidth, screenHeight int) {
+func (h *mouseEventHandler) handleMouseEvent(d *Drawer, space *cp.Space, screenWidth, screenHeight int) {
 	if h.mouseBody == nil {
 		h.mouseBody = cp.NewKinematicBody()
 	}
@@ -379,7 +404,11 @@ func (h *mouseEventHandler) handleMouseEvent(space *cp.Space, screenWidth, scree
 	}
 
 	x -= screenWidth / 2
-	y = -y + screenHeight/2
+	if d.FlipYAxis {
+		y -= screenHeight / 2
+	} else {
+		y = -y + screenHeight/2
+	}
 
 	cursorPosition := cp.Vector{X: float64(x), Y: float64(y)}
 	if isJuestTouched {
