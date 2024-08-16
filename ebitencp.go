@@ -303,8 +303,8 @@ func (d *Drawer) drawOutline(
 	sop.LineJoin = vector.LineJoinRound
 	vs, is := path.AppendVerticesAndIndicesForStroke(nil, nil, sop)
 	for i := range vs {
-		vs[i].DstX += float32(d.Camera.Offset.X)
-		vs[i].DstY += float32(d.Camera.Offset.Y)
+		vs[i].DstX -= float32(d.Camera.Offset.X)
+		vs[i].DstY -= float32(d.Camera.Offset.Y)
 		vs[i].SrcX = 1
 		vs[i].SrcY = 1
 		vs[i].ColorR = r
@@ -389,15 +389,6 @@ func (h *mouseEventHandler) handleMouseEvent(d *Drawer, space *cp.Space, screenW
 		x, y = ebiten.TouchPosition(id)
 		break
 	}
-	// h.touchIDs = inpututil.AppendJustPressedTouchIDs(h.touchIDs[:0])
-	// for _, id := range h.touchIDs {
-	// 	x, y = ebiten.TouchPosition(id)
-	// 	if inpututil.IsTouchJustReleased(id) {
-	// 		h.onMouseUp(space)
-	// 		return
-	// 	}
-	// }
-
 	// mouse position
 	if len(h.touchIDs) == 0 {
 		x, y = ebiten.CursorPosition()
