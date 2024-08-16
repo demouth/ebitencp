@@ -110,7 +110,7 @@ func main() {
 	game.space = space
 	game.drawer = ebitencp.NewDrawer(screenWidth, screenHeight)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
-	ebiten.SetWindowTitle("ebiten-chipmunk - ball")
+	ebiten.SetWindowTitle("ebiten-chipmunk - plink")
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
