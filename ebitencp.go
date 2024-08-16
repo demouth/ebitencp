@@ -325,8 +325,8 @@ func (d *Drawer) drawFill(
 ) {
 	vs, is := path.AppendVerticesAndIndicesForFilling(nil, nil)
 	for i := range vs {
-		vs[i].DstX += float32(d.Camera.Offset.X)
-		vs[i].DstY += float32(d.Camera.Offset.Y)
+		vs[i].DstX -= float32(d.Camera.Offset.X)
+		vs[i].DstY -= float32(d.Camera.Offset.Y)
 		vs[i].SrcX = 1
 		vs[i].SrcY = 1
 		vs[i].ColorR = r
