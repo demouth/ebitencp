@@ -401,6 +401,13 @@ func (h *mouseEventHandler) handleMouseEvent(d *Drawer, space *cp.Space, screenW
 		y = -y + screenHeight/2
 	}
 
+	x += int(d.Camera.Offset.X)
+	if d.FlipYAxis {
+		y += int(d.Camera.Offset.Y)
+	} else {
+		y -= int(d.Camera.Offset.Y)
+	}
+
 	cursorPosition := cp.Vector{X: float64(x), Y: float64(y)}
 	if isJuestTouched {
 		h.mouseBody.SetVelocityVector(cp.Vector{})
