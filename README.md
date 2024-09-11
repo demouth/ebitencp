@@ -123,3 +123,18 @@ func addBall(space *cp.Space, x, y, radius float64) {
 ```
 
 Additional examples can be found in the [examples/)](examples/) directory. These examples can help you adapt the implementation to your own projects.
+
+## Using Ebitengine
+
+You can correct the coordinate system by setting FlipYAxis to true.
+
+Example:
+
+```diff go
+  func main() {
+	// ...
+  	game.drawer = ebitencp.NewDrawer(screenWidth, screenHeight)
++ 	game.drawer.FlipYAxis = true
+	// ...
+  }
+```
