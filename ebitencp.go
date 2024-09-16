@@ -56,6 +56,7 @@ func (d *Drawer) DrawCircle(pos cp.Vector, angle, radius float64, outline, fill 
 	var f float64 = 1
 	if d.FlipYAxis {
 		f = -1
+		angle *= f
 	}
 
 	path := &vector.Path{}
