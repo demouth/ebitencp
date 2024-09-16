@@ -122,7 +122,7 @@ func addBall(space *cp.Space, x, y, radius float64) {
 }
 ```
 
-Additional examples can be found in the [examples/)](examples/) directory. These examples can help you adapt the implementation to your own projects.
+Additional examples can be found in the [examples/](examples/) directory. These examples can help you adapt the implementation to your own projects.
 
 ## Using Ebitengine
 
