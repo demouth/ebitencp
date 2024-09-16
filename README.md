@@ -135,6 +135,8 @@ Example:
 	// ...
   	game.drawer = ebitencp.NewDrawer(screenWidth, screenHeight)
 + 	game.drawer.FlipYAxis = true
++	game.drawer.Camera.Offset.X = screenWidth / 2
++	game.drawer.Camera.Offset.Y = screenHeight / 2
 	// ...
   }
 ```
