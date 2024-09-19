@@ -144,7 +144,9 @@ func (d *Drawer) DrawPolygon(count int, verts []cp.Vector, radius float64, outli
 			float32(v0.X),
 			float32(v0.Y))
 	}
+	d.drawFill(d.Screen, *path, fill.R, fill.G, fill.B, fill.A)
 
+	path = &vector.Path{}
 	outset := 1.0/DrawPointLineScale + radius - inset
 	j := count - 1
 	for i := 0; i < count; {
@@ -223,7 +225,7 @@ func (d *Drawer) DrawPolygon(count int, verts []cp.Vector, radius float64, outli
 		i++
 	}
 
-	d.drawFill(d.Screen, *path, fill.R, fill.G, fill.B, fill.A)
+	d.drawFill(d.Screen, *path, outline.R, outline.G, outline.B, outline.A)
 }
 func (d *Drawer) DrawDot(size float64, pos cp.Vector, fill cp.FColor, data interface{}) {
 	var path *vector.Path = &vector.Path{}
