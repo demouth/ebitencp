@@ -324,11 +324,6 @@ func applyMatrixToVertices(vs []ebiten.Vertex, matrix ebiten.GeoM, camera *Camer
 	for i := range vs {
 		x, y := matrix.Apply(float64(vs[i].DstX), float64(vs[i].DstY))
 		vs[i].DstX, vs[i].DstY = float32(x), float32(y)
-		// vs[i].DstY *= float32(f)
-		// vs[i].DstX -= float32(camera.Offset.X)
-		// vs[i].DstY -= float32(camera.Offset.Y * f)
-		// vs[i].DstX += float32(screenWidth) / 2.0
-		// vs[i].DstY += float32(screenHeight) / 2.0
 		vs[i].SrcX, vs[i].SrcY = 1, 1
 		vs[i].ColorR, vs[i].ColorG, vs[i].ColorB, vs[i].ColorA = r, g, b, a
 	}
@@ -408,20 +403,6 @@ func (h *mouseEventHandler) handleMouseEvent(d *Drawer, space *cp.Space, screenW
 	if len(h.touchIDs) == 0 {
 		x, y = ebiten.CursorPosition()
 	}
-
-	// x -= screenWidth / 2
-	// if d.FlipYAxis {
-	// 	y -= screenHeight / 2
-	// } else {
-	// 	y = -y + screenHeight/2
-	// }
-
-	// x += int(d.Camera.Offset.X)
-	// if d.FlipYAxis {
-	// 	y += int(d.Camera.Offset.Y)
-	// } else {
-	// 	y += int(d.Camera.Offset.Y)
-	// }
 
 	cursorPosition := cp.Vector{X: float64(x), Y: float64(y)}
 	cursorPosition = ScreenToWorld(cursorPosition, *d.GeoM, d.Camera, d.FlipYAxis, screenWidth, screenHeight)
