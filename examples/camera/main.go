@@ -28,18 +28,64 @@ type Game struct {
 	ball1     *cp.Body
 	ball2     *cp.Body
 	flipYAxis bool
+	camera    Camera
+}
+
+type Camera struct {
+	Offset cp.Vector
+	Zoom   float64
+	Rotate float64
 }
 
 func (g *Game) Update() error {
 	// Handling dragging
 	g.drawer.HandleMouseEvent(g.space)
-	g.drawer.Camera.Offset.X = g.ball1.Position().X
-	g.drawer.Camera.Offset.Y = g.ball1.Position().Y
-	g.space.Step(1 / 60.0)
 
+	// Camera.Offset is deprecated
+	// g.drawer.Camera.Offset.X = g.ball1.Position().X
+	// g.drawer.Camera.Offset.Y = g.ball1.Position().Y
+
+	g.drawer.GeoM.Reset()
+	g.drawer.GeoM.Translate(-g.ball1.Position().X, -g.ball1.Position().Y)
+	if ebiten.IsKeyPressed(ebiten.KeyBackspace) {
+		g.camera = Camera{Zoom: 1}
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyD) {
+		g.camera.Offset.X -= 2
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyA) {
+		g.camera.Offset.X += 2
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyW) {
+		g.camera.Offset.Y -= 2
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyS) {
+		g.camera.Offset.Y += 2
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyQ) {
+		g.camera.Rotate += 0.02
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyE) {
+		g.camera.Rotate -= 0.02
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyZ) {
+		g.camera.Zoom += 0.05
+	}
+
+	if ebiten.IsKeyPressed(ebiten.KeyX) {
+		g.camera.Zoom -= 0.05
+		if g.camera.Zoom < 0.05 {
+			g.camera.Zoom = 0.05
+		}
+	}
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 		g.drawer.FlipYAxis = !g.drawer.FlipYAxis
 	}
+	g.drawer.GeoM.Scale(g.camera.Zoom, g.camera.Zoom)
+	g.drawer.GeoM.Rotate(g.camera.Rotate)
+	g.drawer.GeoM.Translate(g.camera.Offset.X, g.camera.Offset.Y)
+
+	g.space.Step(1 / 60.0)
 	return nil
 }
 
@@ -49,9 +95,21 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	ebitenutil.DebugPrint(
 		screen,
-		fmt.Sprintf("Camera Offset: %v\nBall Position: %v\nFlipYAxis: %v\nPress SPACE to flip Y axis",
-			g.drawer.Camera.Offset,
-			g.ball1.Position(),
+		fmt.Sprintf(
+			`Offset: %v
+Zoom: %v
+Rotation: %v
+FlipYAxis: %v
+Usage:
+  Camera Position = WASD
+  Camera Rotation = Q / E
+  Camera Zoom = Z / X
+  Reset Camera = Backspace
+  Drag Object = Cursor
+  Flip Y axis = SPACE`,
+			g.camera.Offset,
+			g.camera.Zoom,
+			g.camera.Rotate,
 			g.drawer.FlipYAxis,
 		),
 	)
@@ -91,6 +149,7 @@ func main() {
 	game.drawer.FlipYAxis = false
 	game.ball1 = ball1
 	game.flipYAxis = false
+	game.camera = Camera{Zoom: 1}
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("ebiten-chipmunk - camera")
 	if err := ebiten.RunGame(game); err != nil {
@@ -182,7 +241,7 @@ func addPentagon(space *cp.Space) {
 	verts := []cp.Vector{}
 	for i := 0; i < numVerts; i++ {
 		angle := -2.0 * math.Pi * float64(i) / numVerts
-		verts = append(verts, cp.Vector{X: 10 * math.Cos(angle), Y: 10 * math.Sin(angle)})
+		verts = append(verts, cp.Vector{X: 20 * math.Cos(angle), Y: 20 * math.Sin(angle)})
 	}
 
 	pentagonMass = 1.0

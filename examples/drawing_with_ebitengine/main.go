@@ -3,6 +3,7 @@ package main
 import (
 	"image/color"
 	_ "image/png"
+	"math/rand"
 
 	"github.com/demouth/ebitencp"
 	"github.com/demouth/ebitencp/examples/drawing_with_ebitengine/util"
@@ -21,7 +22,7 @@ var (
 	space  *cp.Space
 	drawer *ebitencp.Drawer
 
-	drawingWithEbitengine = false
+	drawingWithEbitengine = true
 )
 
 type Game struct{}
@@ -41,12 +42,23 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			case *cp.Circle:
 				circle := s.Class.(*cp.Circle)
 				body := circle.Body()
-				util.DrawCircle(
+				util.DrawRunner(
 					screen,
 					float32(body.Position().X),
 					float32(body.Position().Y),
 					float32(circle.Radius()),
-					color.RGBA{0xff, 0xff, 0xff, 0xff},
+					float32(circle.Body().Angle()),
+				)
+			case *cp.PolyShape:
+				poly := s.Class.(*cp.PolyShape)
+				body := poly.Body()
+				r := (poly.TransformVert(0).Distance(poly.TransformVert(1))) * 0.5
+				util.DrawRunner(
+					screen,
+					float32(body.Position().X),
+					float32(body.Position().Y),
+					float32(r),
+					float32(poly.Body().Angle()),
 				)
 			case *cp.Segment:
 				segment := s.Class.(*cp.Segment)
@@ -64,7 +76,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	} else {
 		cp.DrawSpace(space, drawer.WithScreen(screen))
 	}
-	ebitenutil.DebugPrint(screen, "\n Press 'Space' to toggle drawing with ebitengine")
+	ebitenutil.DebugPrint(screen, "\n Press 'Space' to toggle drawing process")
 }
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return screenWidth, screenHeight
@@ -73,7 +85,13 @@ func main() {
 	space = cp.NewSpace()
 	// Gravity is set to a positive value to match the Ebitengine coordinate system
 	space.SetGravity(cp.Vector{X: 0, Y: 200})
-	addBall(space, screenWidth/2, screenHeight/2, 50)
+	for i := 0; i < 20; i++ {
+		addBall(space, screenWidth*rand.Float64(), screenHeight*rand.Float64(), 30*rand.Float64()+10)
+	}
+	for i := 0; i < 20; i++ {
+		size := rand.Float64()*30 + 20
+		addBox(space, size, size*2, screenWidth*rand.Float64(), screenHeight*rand.Float64())
+	}
 	addWall(space, 0, screenHeight, 0, 0, 5)
 	addWall(space, screenWidth, screenHeight, screenWidth, 0, 5)
 	addWall(space, 0, 0, screenWidth, 0, 5)
@@ -84,10 +102,8 @@ func main() {
 	game := &Game{}
 	drawer = ebitencp.NewDrawer(screenWidth, screenHeight)
 	drawer.FlipYAxis = true
-
 	// Set the camera offset to the center of the screen
-	drawer.Camera.Offset = cp.Vector{X: screenWidth / 2, Y: screenHeight / 2}
-
+	drawer.GeoM.Translate(-screenWidth/2, -screenHeight/2)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.RunGame(game)
 }
@@ -110,6 +126,15 @@ func addBall(space *cp.Space, x, y, radius float64) *cp.Body {
 	shape.SetElasticity(0.5)
 	shape.SetFriction(0.5)
 	return body
+}
+func addBox(space *cp.Space, w, h float64, x, y float64) {
+	mass := w * h / 200.0
+	body := space.AddBody(cp.NewBody(mass, cp.MomentForBox(mass, w, h)))
+	body.SetPosition(cp.Vector{X: x, Y: y})
+
+	shape := space.AddShape(cp.NewBox(body, w, h, 0))
+	shape.SetElasticity(0.9)
+	shape.SetFriction(0.5)
 }
 func addWall(space *cp.Space, x1, y1, x2, y2, radius float64) {
 	pos1 := cp.Vector{X: x1, Y: y1}

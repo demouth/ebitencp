@@ -1,20 +1,32 @@
 package util
 
 import (
+	"bytes"
+	"image"
 	"image/color"
+	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/examples/resources/images"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 var (
-	whiteImage *ebiten.Image
+	whiteImage  *ebiten.Image
+	runnerImage *ebiten.Image
 )
 
 func init() {
 	whiteImage = ebiten.NewImage(3, 3)
 	whiteImage.Fill(color.White)
+
+	// Decode an image from the image file's byte slice.
+	img, _, err := image.Decode(bytes.NewReader(images.Runner_png))
+	if err != nil {
+		log.Fatal(err)
+	}
+	runnerImage = ebiten.NewImageFromImage(img)
 }
 
 func DrawLine(screen *ebiten.Image, x1, y1, x2, y2, width float32, c color.RGBA) {
@@ -57,4 +69,16 @@ func DrawCircle(screen *ebiten.Image, x, y, radius float32, c color.RGBA) {
 	path := vector.Path{}
 	path.Arc(x, y, radius, 0, 2*math.Pi, vector.Clockwise)
 	DrawFill(screen, path, c)
+}
+func DrawRunner(screen *ebiten.Image, x, y, radius, rotate float32) {
+	const frameSize = 32
+	r := radius / frameSize * 2
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(-frameSize/2, -frameSize/2)
+	op.GeoM.Translate(0, -3) // fine tuning
+	op.GeoM.Scale(float64(r), float64(r))
+	op.GeoM.Scale(1.3, 1.3) // fine tuning
+	op.GeoM.Rotate(float64(rotate))
+	op.GeoM.Translate(float64(x), float64(y))
+	screen.DrawImage(runnerImage.SubImage(image.Rect(0, 0, frameSize, frameSize)).(*ebiten.Image), op)
 }
