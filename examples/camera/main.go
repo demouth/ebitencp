@@ -147,6 +147,8 @@ func main() {
 	game.space = space
 	game.drawer = ebitencp.NewDrawer(screenWidth, screenHeight)
 	game.drawer.FlipYAxis = false
+	game.drawer.OptStroke.AntiAlias = false
+	game.drawer.OptFill.AntiAlias = false
 	game.ball1 = ball1
 	game.flipYAxis = false
 	game.camera = Camera{Zoom: 1}

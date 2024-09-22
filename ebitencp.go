@@ -16,19 +16,21 @@ type Drawer struct {
 	Screen       *ebiten.Image
 	ScreenWidth  int
 	ScreenHeight int
-	AntiAlias    bool
 	StrokeWidth  float32
 	FlipYAxis    bool
 	// GeoM for drawing vertices. Useful for cameras.
 	// Apply GeoM to shift the drawing.
-	GeoM *ebiten.GeoM
+	GeoM      *ebiten.GeoM
+	OptStroke *ebiten.DrawTrianglesOptions
+	OptFill   *ebiten.DrawTrianglesOptions
+
 	// Deprecated: Use GeoM instead of Camera
 	Camera Camera
+	// Deprecated: Use OptStroke and OptFill instead of AntiAlias
+	AntiAlias bool
 
 	handler    mouseEventHandler
 	whiteImage *ebiten.Image
-	optStroke  *ebiten.DrawTrianglesOptions
-	optFill    *ebiten.DrawTrianglesOptions
 }
 
 type Camera struct {
@@ -50,11 +52,11 @@ func NewDrawer(screenWidth, screenHeight int) *Drawer {
 		Camera: Camera{
 			Offset: cp.Vector{X: 0, Y: 0},
 		},
-		optStroke: &ebiten.DrawTrianglesOptions{
+		OptStroke: &ebiten.DrawTrianglesOptions{
 			FillRule:  ebiten.FillAll,
 			AntiAlias: antiAlias,
 		},
-		optFill: &ebiten.DrawTrianglesOptions{
+		OptFill: &ebiten.DrawTrianglesOptions{
 			FillRule:  ebiten.FillAll,
 			AntiAlias: antiAlias,
 		},
@@ -295,8 +297,7 @@ func (d *Drawer) drawOutline(
 	sop.LineJoin = vector.LineJoinRound
 	vs, is := path.AppendVerticesAndIndicesForStroke(nil, nil, sop)
 	applyMatrixToVertices(vs, *d.GeoM, &d.Camera, d.FlipYAxis, d.ScreenWidth, d.ScreenHeight, r, g, b, a)
-	op := d.optStroke
-	op.AntiAlias = d.AntiAlias
+	op := d.OptStroke
 	screen.DrawTriangles(vs, is, d.whiteImage, op)
 }
 
@@ -307,8 +308,7 @@ func (d *Drawer) drawFill(
 ) {
 	vs, is := path.AppendVerticesAndIndicesForFilling(nil, nil)
 	applyMatrixToVertices(vs, *d.GeoM, &d.Camera, d.FlipYAxis, d.ScreenWidth, d.ScreenHeight, r, g, b, a)
-	op := d.optFill
-	op.AntiAlias = d.AntiAlias
+	op := d.OptFill
 	screen.DrawTriangles(vs, is, d.whiteImage, op)
 }
 
