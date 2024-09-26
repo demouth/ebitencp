@@ -139,31 +139,10 @@ func (d *Drawer) DrawPolygon(count int, verts []cp.Vector, radius float64, outli
 		extrude[i] = ExtrudeVerts{offset, n2}
 	}
 
-	var path *vector.Path = &vector.Path{}
-
+	path := vector.Path{}
 	inset := -math.Max(0, 1.0/DrawPointLineScale-radius)
-	for i := 0; i < count-2; i++ {
-		v0 := verts[0].Add(extrude[0].offset.Mult(inset))
-		v1 := verts[i+1].Add(extrude[i+1].offset.Mult(inset))
-		v2 := verts[i+2].Add(extrude[i+2].offset.Mult(inset))
-
-		path.MoveTo(
-			float32(v0.X),
-			float32(v0.Y))
-		path.LineTo(
-			float32(v1.X),
-			float32(v1.Y))
-		path.LineTo(
-			float32(v2.X),
-			float32(v2.Y))
-		path.LineTo(
-			float32(v0.X),
-			float32(v0.Y))
-	}
-	d.drawFill(d.Screen, *path, fill.R, fill.G, fill.B, fill.A)
-
-	path = &vector.Path{}
 	outset := 1.0/DrawPointLineScale + radius - inset
+	outset2 := 1.0/DrawPointLineScale + radius - inset
 	j := count - 1
 	for i := 0; i < count; {
 		vA := verts[i]
@@ -178,70 +157,40 @@ func (d *Drawer) DrawPolygon(count int, verts []cp.Vector, radius float64, outli
 		innerA := vA.Add(offsetA.Mult(inset))
 		innerB := vB.Add(offsetB.Mult(inset))
 
-		inner0 := innerA
-		inner1 := innerB
 		outer0 := innerA.Add(nB.Mult(outset))
 		outer1 := innerB.Add(nB.Mult(outset))
 		outer2 := innerA.Add(offsetA.Mult(outset))
-		outer3 := innerA.Add(nA.Mult(outset))
+		outer3 := innerA.Add(offsetA.Mult(outset2))
+		outer4 := innerA.Add(nA.Mult(outset))
 
-		path.MoveTo(
-			float32(inner0.X),
-			float32(inner0.Y))
-		path.LineTo(
-			float32(inner1.X),
-			float32(inner1.Y))
 		path.LineTo(
 			float32(outer1.X),
 			float32(outer1.Y))
 		path.LineTo(
-			float32(inner0.X),
-			float32(inner0.Y))
-
-		path.MoveTo(
-			float32(inner0.X),
-			float32(inner0.Y))
-		path.LineTo(
 			float32(outer0.X),
 			float32(outer0.Y))
-		path.LineTo(
-			float32(outer1.X),
-			float32(outer1.Y))
-		path.LineTo(
-			float32(inner0.X),
-			float32(inner0.Y))
-
-		path.MoveTo(
-			float32(inner0.X),
-			float32(inner0.Y))
-		path.LineTo(
-			float32(outer0.X),
-			float32(outer0.Y))
-		path.LineTo(
-			float32(outer2.X),
-			float32(outer2.Y))
-		path.LineTo(
-			float32(inner0.X),
-			float32(inner0.Y))
-
-		path.MoveTo(
-			float32(inner0.X),
-			float32(inner0.Y))
-		path.LineTo(
-			float32(outer2.X),
-			float32(outer2.Y))
-		path.LineTo(
-			float32(outer3.X),
-			float32(outer3.Y))
-		path.LineTo(
-			float32(inner0.X),
-			float32(inner0.Y))
+		if radius != 0 {
+			path.ArcTo(
+				float32(outer3.X),
+				float32(outer3.Y),
+				float32(outer4.X),
+				float32(outer4.Y),
+				float32(radius),
+			)
+		} else {
+			// ArcTo() and Arc() are very computationally expensive, so use LineTo()
+			path.LineTo(
+				float32(outer2.X),
+				float32(outer2.Y))
+		}
 
 		j = i
 		i++
 	}
+	path.Close()
 
-	d.drawFill(d.Screen, *path, outline.R, outline.G, outline.B, outline.A)
+	d.drawFill(d.Screen, path, fill.R, fill.G, fill.B, fill.A)
+	d.drawOutline(d.Screen, path, outline.R, outline.G, outline.B, outline.A)
 }
 func (d *Drawer) DrawDot(size float64, pos cp.Vector, fill cp.FColor, data interface{}) {
 	var path *vector.Path = &vector.Path{}

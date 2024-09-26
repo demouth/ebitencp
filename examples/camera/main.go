@@ -257,5 +257,10 @@ func addPentagon(space *cp.Space) {
 		shape = space.AddShape(cp.NewPolyShape(body, numVerts, verts, cp.NewTransformIdentity(), 0))
 		shape.SetElasticity(0)
 		shape.SetFriction(0.4)
+
+		if i > 5 {
+			poly := shape.Class.(*cp.PolyShape)
+			poly.SetRadius(10)
+		}
 	}
 }
