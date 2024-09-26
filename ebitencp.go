@@ -13,18 +13,24 @@ import (
 const DrawPointLineScale = 1.0
 
 type Drawer struct {
-	whiteImage *ebiten.Image
-	Screen     *ebiten.Image
-
+	Screen       *ebiten.Image
 	ScreenWidth  int
 	ScreenHeight int
-	AntiAlias    bool
 	StrokeWidth  float32
 	FlipYAxis    bool
+	// GeoM for drawing vertices. Useful for cameras.
+	// Apply GeoM to shift the drawing.
+	GeoM      *ebiten.GeoM
+	OptStroke *ebiten.DrawTrianglesOptions
+	OptFill   *ebiten.DrawTrianglesOptions
 
+	// Deprecated: Use GeoM instead of Camera
 	Camera Camera
+	// Deprecated: Use OptStroke and OptFill instead of AntiAlias
+	AntiAlias bool
 
-	handler mouseEventHandler
+	handler    mouseEventHandler
+	whiteImage *ebiten.Image
 }
 
 type Camera struct {
@@ -34,15 +40,25 @@ type Camera struct {
 func NewDrawer(screenWidth, screenHeight int) *Drawer {
 	whiteImage := ebiten.NewImage(3, 3)
 	whiteImage.Fill(color.White)
+	antiAlias := true
 	return &Drawer{
 		whiteImage:   whiteImage,
 		ScreenWidth:  screenWidth,
 		ScreenHeight: screenHeight,
-		AntiAlias:    true,
+		AntiAlias:    antiAlias,
 		StrokeWidth:  1,
 		FlipYAxis:    false,
+		GeoM:         &ebiten.GeoM{},
 		Camera: Camera{
 			Offset: cp.Vector{X: 0, Y: 0},
+		},
+		OptStroke: &ebiten.DrawTrianglesOptions{
+			FillRule:  ebiten.FillAll,
+			AntiAlias: antiAlias,
+		},
+		OptFill: &ebiten.DrawTrianglesOptions{
+			FillRule:  ebiten.FillAll,
+			AntiAlias: antiAlias,
 		},
 	}
 }
@@ -276,31 +292,12 @@ func (d *Drawer) drawOutline(
 	path vector.Path,
 	r, g, b, a float32,
 ) {
-	var f float64 = -1
-	if d.FlipYAxis {
-		f = 1
-	}
-
 	sop := &vector.StrokeOptions{}
 	sop.Width = d.StrokeWidth
 	sop.LineJoin = vector.LineJoinRound
 	vs, is := path.AppendVerticesAndIndicesForStroke(nil, nil, sop)
-	for i := range vs {
-		vs[i].DstY *= float32(f)
-		vs[i].DstX -= float32(d.Camera.Offset.X)
-		vs[i].DstY -= float32(d.Camera.Offset.Y * f)
-		vs[i].DstX += float32(d.ScreenWidth) / 2.0
-		vs[i].DstY += float32(d.ScreenHeight) / 2.0
-		vs[i].SrcX = 1
-		vs[i].SrcY = 1
-		vs[i].ColorR = r
-		vs[i].ColorG = g
-		vs[i].ColorB = b
-		vs[i].ColorA = a
-	}
-	op := &ebiten.DrawTrianglesOptions{}
-	op.FillRule = ebiten.FillAll
-	op.AntiAlias = d.AntiAlias
+	applyMatrixToVertices(vs, *d.GeoM, &d.Camera, d.FlipYAxis, d.ScreenWidth, d.ScreenHeight, r, g, b, a)
+	op := d.OptStroke
 	screen.DrawTriangles(vs, is, d.whiteImage, op)
 }
 
@@ -309,29 +306,48 @@ func (d *Drawer) drawFill(
 	path vector.Path,
 	r, g, b, a float32,
 ) {
+	vs, is := path.AppendVerticesAndIndicesForFilling(nil, nil)
+	applyMatrixToVertices(vs, *d.GeoM, &d.Camera, d.FlipYAxis, d.ScreenWidth, d.ScreenHeight, r, g, b, a)
+	op := d.OptFill
+	screen.DrawTriangles(vs, is, d.whiteImage, op)
+}
+
+func applyMatrixToVertices(vs []ebiten.Vertex, matrix ebiten.GeoM, camera *Camera, flipYAxis bool, screenWidth, screenHeight int, r, g, b, a float32) {
 	var f float64 = -1
-	if d.FlipYAxis {
+	if flipYAxis {
 		f = 1
 	}
 
-	vs, is := path.AppendVerticesAndIndicesForFilling(nil, nil)
+	matrix.Scale(1, f)
+	matrix.Translate(-camera.Offset.X, -camera.Offset.Y*f)
+	matrix.Translate(float64(screenWidth)/2.0, float64(screenHeight)/2.0)
 	for i := range vs {
-		vs[i].DstY *= float32(f)
-		vs[i].DstX -= float32(d.Camera.Offset.X)
-		vs[i].DstY -= float32(d.Camera.Offset.Y * f)
-		vs[i].DstX += float32(d.ScreenWidth) / 2.0
-		vs[i].DstY += float32(d.ScreenHeight) / 2.0
-		vs[i].SrcX = 1
-		vs[i].SrcY = 1
-		vs[i].ColorR = r
-		vs[i].ColorG = g
-		vs[i].ColorB = b
-		vs[i].ColorA = a
+		x, y := matrix.Apply(float64(vs[i].DstX), float64(vs[i].DstY))
+		vs[i].DstX, vs[i].DstY = float32(x), float32(y)
+		vs[i].SrcX, vs[i].SrcY = 1, 1
+		vs[i].ColorR, vs[i].ColorG, vs[i].ColorB, vs[i].ColorA = r, g, b, a
 	}
-	op := &ebiten.DrawTrianglesOptions{}
-	op.FillRule = ebiten.FillAll
-	op.AntiAlias = d.AntiAlias
-	screen.DrawTriangles(vs, is, d.whiteImage, op)
+}
+
+// ScreenToWorld converts screen-space coordinates to world-space
+func ScreenToWorld(screenPoint cp.Vector, cameraGeoM ebiten.GeoM, camera Camera, flipYAxis bool, screenWidth, screenHeight int) cp.Vector {
+	if cameraGeoM.IsInvertible() {
+		cameraGeoM.Invert()
+		var f float64 = -1
+		if flipYAxis {
+			f = 1
+		}
+		matrix := &ebiten.GeoM{}
+		matrix.Translate(-float64(screenWidth)/2.0, -float64(screenHeight)/2.0)
+		matrix.Translate(camera.Offset.X, camera.Offset.Y*f)
+		matrix.Scale(1, f)
+		matrix.Concat(cameraGeoM)
+		worldX, worldY := matrix.Apply(screenPoint.X, screenPoint.Y)
+		return cp.Vector{X: worldX, Y: worldY}
+	} else {
+		// When scaling it can happened that matrix is not invertable
+		return cp.Vector{X: math.NaN(), Y: math.NaN()}
+	}
 }
 
 func (d *Drawer) HandleMouseEvent(space *cp.Space) {
@@ -388,21 +404,9 @@ func (h *mouseEventHandler) handleMouseEvent(d *Drawer, space *cp.Space, screenW
 		x, y = ebiten.CursorPosition()
 	}
 
-	x -= screenWidth / 2
-	if d.FlipYAxis {
-		y -= screenHeight / 2
-	} else {
-		y = -y + screenHeight/2
-	}
-
-	x += int(d.Camera.Offset.X)
-	if d.FlipYAxis {
-		y += int(d.Camera.Offset.Y)
-	} else {
-		y += int(d.Camera.Offset.Y)
-	}
-
 	cursorPosition := cp.Vector{X: float64(x), Y: float64(y)}
+	cursorPosition = ScreenToWorld(cursorPosition, *d.GeoM, d.Camera, d.FlipYAxis, screenWidth, screenHeight)
+
 	if isJuestTouched {
 		h.mouseBody.SetVelocityVector(cp.Vector{})
 		h.mouseBody.SetPosition(cursorPosition)
