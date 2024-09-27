@@ -98,7 +98,6 @@ func (d *Drawer) DrawSegment(a, b cp.Vector, fill cp.FColor, data interface{}) {
 		float32(b.X),
 		float32(b.Y))
 	path.Close()
-	d.drawFill(d.Screen, *path, fill.R, fill.G, fill.B, fill.A)
 	d.drawOutline(d.Screen, *path, fill.R, fill.G, fill.B, fill.A)
 }
 
