@@ -18,6 +18,8 @@ type Drawer struct {
 	ScreenHeight int
 	StrokeWidth  float32
 	FlipYAxis    bool
+	// Drawing colors
+	Theme *Theme
 	// GeoM for drawing vertices. Useful for cameras.
 	// Apply GeoM to shift the drawing.
 	GeoM      *ebiten.GeoM
@@ -48,6 +50,7 @@ func NewDrawer(screenWidth, screenHeight int) *Drawer {
 		AntiAlias:    antiAlias,
 		StrokeWidth:  1,
 		FlipYAxis:    false,
+		Theme:        DefaultTheme(),
 		GeoM:         &ebiten.GeoM{},
 		Camera: Camera{
 			Offset: cp.Vector{X: 0, Y: 0},
@@ -208,27 +211,27 @@ func (d *Drawer) Flags() uint {
 }
 
 func (d *Drawer) OutlineColor() cp.FColor {
-	return cp.FColor{R: 200.0 / 255.0, G: 210.0 / 255.0, B: 230.0 / 255.0, A: 1}
+	return toFColor(d.Theme.Outline)
 }
 
 func (d *Drawer) ShapeColor(shape *cp.Shape, data interface{}) cp.FColor {
 	body := shape.Body()
 	if body.IsSleeping() {
-		return cp.FColor{R: .2, G: .2, B: .2, A: 0.5}
+		return toFColor(d.Theme.ShapeSleeping)
 	}
 
 	if body.IdleTime() > shape.Space().SleepTimeThreshold {
-		return cp.FColor{R: .66, G: .66, B: .66, A: 0.5}
+		return toFColor(d.Theme.ShapeIdle)
 	}
-	return cp.FColor{R: 0.7, G: 0.3, B: 0.6, A: 0.5}
+	return toFColor(d.Theme.Shape)
 }
 
 func (d *Drawer) ConstraintColor() cp.FColor {
-	return cp.FColor{R: 0, G: 0.75, B: 0, A: 1}
+	return toFColor(d.Theme.Constraint)
 }
 
 func (d *Drawer) CollisionPointColor() cp.FColor {
-	return cp.FColor{R: 1, G: 0.1, B: 0.2, A: 1}
+	return toFColor(d.Theme.CollisionPoint)
 }
 
 func (d *Drawer) Data() interface{} {
