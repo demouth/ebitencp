@@ -53,11 +53,11 @@ func NewDrawer(screenWidth, screenHeight int) *Drawer {
 			Offset: cp.Vector{X: 0, Y: 0},
 		},
 		OptStroke: &ebiten.DrawTrianglesOptions{
-			FillRule:  ebiten.FillAll,
+			FillRule:  ebiten.FillRuleFillAll,
 			AntiAlias: antiAlias,
 		},
 		OptFill: &ebiten.DrawTrianglesOptions{
-			FillRule:  ebiten.FillAll,
+			FillRule:  ebiten.FillRuleFillAll,
 			AntiAlias: antiAlias,
 		},
 	}
